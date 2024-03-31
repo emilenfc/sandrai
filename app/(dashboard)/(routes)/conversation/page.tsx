@@ -1,5 +1,6 @@
 "use client";
 
+import axios from 'axios';
 import * as z from 'zod';
 import { Heading } from '@/components/heading';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
@@ -10,8 +11,16 @@ import { formSchema } from './constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
+
 
 const ConversationPage = () => {
+  const router = useRouter()
+  const [messages, setMessages] = useState<ChatCompletionMessageParam[]>([]);
+
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -21,9 +30,27 @@ const ConversationPage = () => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async(values: z.infer<typeof formSchema>) => {
-    console.log(values);
-  };
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const userMessage: ChatCompletionMessageParam = {
+        role: 'user',
+        content: values.prompt,
+      };
+      const newMessages = [...messages, userMessage];
+  
+      const response = await axios.post('/api/conversation', {
+        messages: newMessages
+      });
+      setMessages((current) => [...current, userMessage, response.data])
+      form.reset();
+
+    } catch (error: any) {
+      // TODO: Open Pro Model
+      console.log(error);
+    } finally {
+      router.refresh();
+    }
+  }
 
   return (
     <div>
@@ -61,7 +88,20 @@ const ConversationPage = () => {
           </Form>
         </div>
         <div className='space-y-4 mt-4'>
-          message content
+          <div className='flex flex-col-reverse gap-y-4'>
+ {messages.map((message, index) => (
+      <div key={index} className={`flex gap-2 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+        {message.role === 'user' ? null : (
+          <div className='flex-shrink-0'>
+            <MessageSquare className='w-6 h-6' />
+          </div>
+        )}
+        <div className={`flex-grow p-3 rounded-lg ${message.role === 'user' ? 'bg-violet-100 text-violet-900' : 'bg-gray-100 text-gray-900'}`}>
+          {message.content}
+        </div>
+      </div>
+    ))}
+          </div>
         </div>
       </div>
     </div>
