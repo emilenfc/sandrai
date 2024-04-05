@@ -5,6 +5,7 @@ import  OpenAI from "openai";
 // const configuration = new Configuration({
 //     apiKey: process.env.OPENAI_API_KEY,
 // });
+// TODO: Need payment for this feature in OpenAI to be able to use it
 const openai = new OpenAI();
 
 export async function POST(
@@ -18,6 +19,8 @@ export async function POST(
         if (!userId) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
+        // TODO: To be uncomented after adding payment method
+        
         // if (!configuration.apiKey) {
         //     return new NextResponse("OpenAI API key not configured", { status: 500 });
         // }
